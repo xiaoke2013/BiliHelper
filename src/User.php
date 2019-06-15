@@ -64,6 +64,17 @@ class User
         return false;
     }
 
+    //获取用户信息
+    public static function getUserInfo(): array
+    {
+        $payload = [
+            'ts' => Live::getMillisecond(),
+        ];
+        $raw = Curl::get('https://api.live.bilibili.com/User/getUserInfo', Sign::api($payload));
+        $de_raw = json_decode($raw, true);
+        return $de_raw;
+    }
+
     //转换信息
     public static function parseCookies(): array
     {

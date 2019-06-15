@@ -9,6 +9,8 @@
 
 namespace lkeme\BiliHelper;
 
+use lkeme\BiliHelper\utils\HttpCommonUtil;
+
 class Curl
 {
     public static $headers = array(
@@ -177,8 +179,8 @@ class Curl
                 }
                 break;
             default:
-                Log::warning('当前协议设置不正确,请检查配置文件!');
-                die();
+                Log::error('当前协议设置不正确,请检查配置文件!');
+                HttpCommonUtil::myDie('当前协议设置不正确,请检查配置文件!');
                 break;
         }
 

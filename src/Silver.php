@@ -9,10 +9,12 @@
 
 namespace lkeme\BiliHelper;
 
+use lkeme\BiliHelper\utils\HttpCommonUtil;
+
 class Silver
 {
     public static $lock = 0;
-    protected static $task = [];
+    public static $task = [];
 
     public static function run()
     {
@@ -75,7 +77,7 @@ class Silver
 
         if (isset($data['code']) && $data['code']) {
             Log::error("check freeSilverCurrentTask failed! Error message: {$data['message']}");
-            die();
+            HttpCommonUtil::myDie("check freeSilverCurrentTask failed! Error message: {$data['message']}");
         }
 
         Log::info("获得一个宝箱，内含 {$data['data']['silver']} 个瓜子");

@@ -8,6 +8,8 @@
 
 namespace lkeme\BiliHelper;
 
+use lkeme\BiliHelper\utils\HttpCommonUtil;
+
 class MasterSite
 {
     public static $lock = 0;
@@ -95,8 +97,8 @@ class MasterSite
                 $av_num = getenv('ADD_COIN_AV_NUM');
                 $av_num = (int)$av_num;
                 if ($av_num == 0) {
-                    Log::warning('当前视频投币设置不正确,请检查配置文件!');
-                    die();
+                    Log::error('当前视频投币设置不正确,请检查配置文件!');
+                    HttpCommonUtil::myDie('当前视频投币设置不正确,请检查配置文件!');
                 }
                 if ($av_num == 1) {
                     $aid = !empty(getenv('ADD_COIN_AV')) ? getenv('ADD_COIN_AV') : self::getRandomAid();
@@ -114,8 +116,8 @@ class MasterSite
                 }
                 break;
             default:
-                Log::warning('当前视频投币设置不正确,请检查配置文件!');
-                die();
+                Log::error('当前视频投币设置不正确,请检查配置文件!');
+                HttpCommonUtil::myDie('当前视频投币设置不正确,请检查配置文件!');
                 break;
         }
         return true;

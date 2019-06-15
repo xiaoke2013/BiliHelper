@@ -14,7 +14,7 @@ class RaffleHandler
     // 房间ID
     private static $room_id = 0;
     // 时间锁
-    private static $lock = 0;
+    public static $lock = 0;
     // 待抽奖 WEB端
     private static $lottery_list_app = [];
     // 待抽奖 WEB端

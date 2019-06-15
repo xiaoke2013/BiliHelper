@@ -54,13 +54,14 @@ class Index
         }
     }
 
-    protected static function loadConfigFile()
+    public static function loadConfigFile($conf_file=null)
     {
-        $file_path = __DIR__ . '/conf/' . self::$conf_file;
+        $conf_file = $conf_file == null? (self::$conf_file == null? 'user.conf': self::$conf_file): $conf_file;
+        $file_path = __DIR__ . '/conf/' .$conf_file;
 
-        if (is_file($file_path) && self::$conf_file != 'user.conf') {
+        if (is_file($file_path) && $conf_file != 'user.conf') {
             $load_files = [
-                self::$conf_file,
+                $conf_file,
             ];
         } else {
             $default_file_path = __DIR__ . '/conf/user.conf';

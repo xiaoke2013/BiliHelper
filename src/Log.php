@@ -9,6 +9,7 @@
 
 namespace lkeme\BiliHelper;
 
+use lkeme\BiliHelper\utils\HttpCommonUtil;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Bramus\Monolog\Formatter\ColoredLineFormatter;
@@ -17,9 +18,12 @@ class Log
 {
     protected static $instance;
 
+    public static $logs = array();
+
     static public function getLogger()
     {
-        if (!self::$instance) {
+        //如果是HTTP调用，则不需要加载Logger，否则会将日志打印到返回结果中
+        if (!self::$instance && !HttpCommonUtil::$callByHttp) {
             self::configureInstance();
         }
         return self::$instance;
@@ -61,14 +65,18 @@ class Log
     public static function debug($message, array $context = [])
     {
         self::writeLog('DEBUG', $message);
-        self::getLogger()->addDebug($message, $context);
+        if(self::getLogger() != null) {
+            self::getLogger()->addDebug($message, $context);
+        }
     }
 
     public static function info($message, array $context = [])
     {
         $message = self::prefix() . $message;
         self::writeLog('INFO', $message);
-        self::getLogger()->addInfo($message, $context);
+        if(self::getLogger() != null) {
+            self::getLogger()->addInfo($message, $context);
+        }
         self::callback(Logger::INFO, 'INFO', $message);
     }
 
@@ -76,7 +84,9 @@ class Log
     {
         $message = self::prefix() . $message;
         self::writeLog('NOTICE', $message);
-        self::getLogger()->addNotice($message, $context);
+        if(self::getLogger() != null) {
+            self::getLogger()->addNotice($message, $context);
+        }
         self::callback(Logger::NOTICE, 'NOTICE', $message);
     }
 
@@ -84,7 +94,9 @@ class Log
     {
         $message = self::prefix() . $message;
         self::writeLog('WARNING', $message);
-        self::getLogger()->addWarning($message, $context);
+        if(self::getLogger() != null) {
+            self::getLogger()->addWarning($message, $context);
+        }
         self::callback(Logger::WARNING, 'WARNING', $message);
     }
 
@@ -92,12 +104,15 @@ class Log
     {
         $message = self::prefix() . $message;
         self::writeLog('ERROR', $message);
-        self::getLogger()->addError($message, $context);
+        if(self::getLogger() != null) {
+            self::getLogger()->addError($message, $context);
+        }
         self::callback(Logger::ERROR, 'ERROR', $message);
     }
 
     public static function callback($levelId, $level, $message)
     {
+        array_push(self::$logs, array('level' => $level, 'message' => $message));
         $callback_level = (('APP_CALLBACK_LEVEL') == '') ? (Logger::ERROR) : intval(getenv('APP_CALLBACK_LEVEL'));
         if ($levelId >= $callback_level) {
             $url = str_replace('{account}', self::prefix(), getenv('APP_CALLBACK'));
