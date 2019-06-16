@@ -46,6 +46,26 @@ class Log
         return '';
     }
 
+    /**
+     * 日志回调使用的前缀
+     * @return string 前缀
+     */
+    private static function callbackPrefix(){
+        //如果是HTTP方式调用，日志必须区分用户
+        if(HttpCommonUtil::$callByHttp){
+            return self::getUid();
+        }
+        //基于配置调用则不一定需要区分用户
+        return self::prefix();
+    }
+
+    /**
+     * @return string 当前用户的UID
+     */
+    private static function getUid(){
+        return getenv('UID');
+    }
+
     private static function writeLog($type, $message)
     {
         if (getenv('APP_WRITELOG') == 'true') {
@@ -115,7 +135,7 @@ class Log
         array_push(self::$logs, array('level' => $level, 'message' => $message));
         $callback_level = (('APP_CALLBACK_LEVEL') == '') ? (Logger::ERROR) : intval(getenv('APP_CALLBACK_LEVEL'));
         if ($levelId >= $callback_level) {
-            $url = str_replace('{account}', self::prefix(), getenv('APP_CALLBACK'));
+            $url = str_replace('{account}', self::callbackPrefix(), getenv('APP_CALLBACK'));
             $url = str_replace('{level}', $level, $url);
             $url = str_replace('{message}', urlencode($message), $url);
             Curl::get($url);

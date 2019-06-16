@@ -91,6 +91,20 @@ class Login
             Log::error('检查令牌失败', ['msg' => $data['message']]);
             return false;
         }
+        try {
+            if(isset($data['data'])) {
+                //用户ID
+                if(isset($data['data']['uid'])) {
+                    MyIndex::setEnvironmentVariable('UID', $data['data']['uid']);
+                }
+                //用户昵称
+                if(isset($data['data']['uname'])) {
+                    MyIndex::setEnvironmentVariable('UNAME', $data['data']['uname']);
+                }
+            }
+        }catch (\Exception $e){
+            Log::warning($e->getMessage());
+        }
         Log::info('令牌有效期: ' . date('Y-m-d H:i:s', $data['ts'] + $data['data']['expires_in']));
         return $data['data']['expires_in'] > 14400;
     }
