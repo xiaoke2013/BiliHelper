@@ -9,6 +9,7 @@
 
 namespace lkeme\BiliHelper;
 
+use Exception;
 use lkeme\BiliHelper\utils\HttpCommonUtil;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -63,7 +64,20 @@ class Log
      * @return string 当前用户的UID
      */
     private static function getUid(){
-        return getenv('UID');
+        $uid = getenv('UID');
+        if($uid == null){
+            //如果没有UID，则首先获取
+            $arr = User::getUserInfo();
+            if(isset($arr['data'])){
+                $uid =  $arr['data']['uid'];
+                if($uid != null){
+                    try {
+                        MyIndex::setEnvironmentVariable('UID', $uid);
+                    }catch (Exception $e){}
+                }
+            }
+        }
+        return $uid;
     }
 
     private static function writeLog($type, $message)
@@ -134,11 +148,15 @@ class Log
     {
         array_push(self::$logs, array('level' => $level, 'message' => $message));
         $callback_level = (('APP_CALLBACK_LEVEL') == '') ? (Logger::ERROR) : intval(getenv('APP_CALLBACK_LEVEL'));
-        if ($levelId >= $callback_level) {
-            $url = str_replace('{account}', self::callbackPrefix(), getenv('APP_CALLBACK'));
-            $url = str_replace('{level}', $level, $url);
-            $url = str_replace('{message}', urlencode($message), $url);
-            Curl::get($url);
+        if ($levelId == null || $levelId >= $callback_level) {
+            $url =getenv('APP_CALLBACK');
+            try {
+                Curl::purePost($url, array(
+                    'level' => $level,
+                    'message' => $message,
+                    'uid' => self::callbackPrefix()
+                ));
+            }catch (Exception $e){}
         }
     }
 }

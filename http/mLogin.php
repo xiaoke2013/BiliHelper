@@ -22,8 +22,15 @@ try {
     //执行登入
     Login::loginByUserPass($_POST['username'], $_POST['password']);
     //登录成功则设置cookie, 过期时间为1个月
-    setcookie("ACCESS_TOKEN", getenv('ACCESS_TOKEN'), time()+ 3600 * 24 * 30);
-    setcookie("REFRESH_TOKEN", getenv('REFRESH_TOKEN'), time()+ 3600 * 24 * 30);
+    $expire = time()+ 3600 * 24 * 30;
+    setcookie("ACCESS_TOKEN", getenv('ACCESS_TOKEN'), $expire);
+    setcookie("REFRESH_TOKEN", getenv('REFRESH_TOKEN'), $expire);
+
+    $biliCookies = Login::getBiliCookies();
+    foreach ($biliCookies as $name => $value){
+        setcookie($name, $value, $expire, '/');
+    }
+
 
     $returnDto = ReturnDto::success(null, "登录成功");
 }catch (Exception $e){

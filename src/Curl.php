@@ -30,6 +30,47 @@ class Curl
         }, array_keys($headers), $headers);
     }
 
+    /**
+     * 原始的POST请求（不进行重试）
+     * @param $url
+     * @param null $payload
+     * @param null $header
+     * @param int $timeout
+     * @return bool|string
+     * @throws \Exception
+     */
+    public static function purePost($url, $payload = null, $header = null, $timeout = 30){
+        $curl = curl_init();
+        if (!is_null($payload)) {
+            curl_setopt($curl, CURLOPT_POST, 1);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, is_array($payload) ? http_build_query($payload) : $payload);
+        }
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_ENCODING, 'gzip');
+        curl_setopt($curl, CURLOPT_IPRESOLVE, 1);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+        // 超时 重要
+        curl_setopt($curl, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $timeout);
+        if (($cookie = getenv('COOKIE')) != "") {
+            curl_setopt($curl, CURLOPT_COOKIE, $cookie);
+        }
+        if (getenv('USE_PROXY') == 'true') {
+            curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_IP'));
+            curl_setopt($curl, CURLOPT_PROXYPORT, getenv('PROXY_PORT'));
+        }
+        $raw = curl_exec($curl);
+
+        if ($err_no = curl_errno($curl)) {
+            throw new \Exception(curl_error($curl));
+        }
+        curl_close($curl);
+        return $raw;
+    }
+
     public static function post($url, $payload = null, $headers = null, $timeout = 30)
     {
         $url = self::http2https($url);
@@ -37,8 +78,8 @@ class Curl
         $header = is_null($headers) ? self::getHeaders(self::$headers) : self::getHeaders($headers);
 
         // 重试次数
-        $ret_count = 300;
-        $waring = 270;
+        $ret_count = 10;
+        $waring = 7;
 
         while ($ret_count) {
             // 网络断开判断 延时方便连接网络
@@ -47,33 +88,7 @@ class Curl
                 sleep(10);
             }
             try {
-                $curl = curl_init();
-                if (!is_null($payload)) {
-                    curl_setopt($curl, CURLOPT_POST, 1);
-                    curl_setopt($curl, CURLOPT_POSTFIELDS, is_array($payload) ? http_build_query($payload) : $payload);
-                }
-                curl_setopt($curl, CURLOPT_URL, $url);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
-                curl_setopt($curl, CURLOPT_HEADER, 0);
-                curl_setopt($curl, CURLOPT_ENCODING, 'gzip');
-                curl_setopt($curl, CURLOPT_IPRESOLVE, 1);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
-                // 超时 重要
-                curl_setopt($curl, CURLOPT_TIMEOUT, $timeout);
-                curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $timeout);
-                if (($cookie = getenv('COOKIE')) != "") {
-                    curl_setopt($curl, CURLOPT_COOKIE, $cookie);
-                }
-                if (getenv('USE_PROXY') == 'true') {
-                    curl_setopt($curl, CURLOPT_PROXY, getenv('PROXY_IP'));
-                    curl_setopt($curl, CURLOPT_PROXYPORT, getenv('PROXY_PORT'));
-                }
-                $raw = curl_exec($curl);
-
-                if ($err_no = curl_errno($curl)) {
-                    throw new \Exception(curl_error($curl));
-                }
+                $raw = self::purePost($url, $payload, $headers, $timeout);
 
                 if ($raw === false || strpos($raw, 'timeout') !== false) {
                     Log::warning('重试，获取的资源无效!');
@@ -82,7 +97,6 @@ class Curl
                 }
 
                 Log::debug($raw);
-                curl_close($curl);
                 return $raw;
 
             } catch (\Exception $e) {

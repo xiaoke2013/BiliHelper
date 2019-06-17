@@ -252,8 +252,31 @@ class Login
             $temp .= $cookie['name'] . '=' . $cookie['value'] . ';';
         }
         File::writeNewEnvironmentFileWith('COOKIE', $temp);
+        //设置到环境变量中
+        try {
+            MyIndex::setEnvironmentVariable('BILI_COOKIE', urldecode($temp));
+        } catch (ServiceException $e) {
+            Log::debug($e->getMessage());
+        }
         Log::info(' > auth cookie: ' . $temp);
         return;
+    }
+
+    public static function getBiliCookies(){
+        $cookieStr = getenv('BILI_COOKIE');
+        $cookie = array();
+        if($cookieStr != null){
+            $tmp = explode(';', $cookieStr);
+            if($tmp != null){
+                foreach ($tmp as $item){
+                    $arr = explode('=', $item);
+                    if($arr != null && count($arr) >= 2){
+                        $cookie[$arr[0]] = $arr[1];
+                    }
+                }
+            }
+        }
+        return $cookie;
     }
 
 }

@@ -34,6 +34,8 @@ class HttpCommonUtil
      */
     public static $callByHttp = false;
 
+    public static $saveEnvs = array('BILI_COOKIE');
+
     /**
      * 载入程序配置并检查登录状态
      * @throws AuthException 登录异常
@@ -63,7 +65,9 @@ class HttpCommonUtil
         if($_COOKIE != null){
             $temp = '';
             foreach ($_COOKIE as $cookie) {
-                $temp .= $cookie['name'] . '=' . $cookie['value'] . ';';
+                if(isset($cookie['name']) && isset($cookie['value'])){
+                    $temp .= $cookie['name'] . '=' . $cookie['value'] . ';';
+                }
             }
             MyIndex::setEnvironmentVariable('COOKIE', $temp);
         }
@@ -129,6 +133,15 @@ class HttpCommonUtil
         Websocket::$lock = self::getTargetLockFromSession('Websocket');
 
         Silver::$task = self::getTargetLockFromSession('Silver:Task');
+
+        foreach (self::$saveEnvs as $saveEnv){
+            try {
+                if(isset($_SESSION[$saveEnv])) {
+                    MyIndex::setEnvironmentVariable($saveEnv, $_SESSION[$saveEnv]);
+                }
+            } catch (ServiceException $e) {
+            }
+        }
     }
 
     /**
@@ -157,6 +170,10 @@ class HttpCommonUtil
             //其它数据
             'Silver:Task' => Silver::$task
         );
+
+        foreach (self::$saveEnvs as $saveEnv){
+            $_SESSION[$saveEnv] = getenv($saveEnv);
+        }
     }
 
     /**
